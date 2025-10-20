@@ -2,6 +2,7 @@ import yfinance as yf
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
+import pytz  # add at the top
 from ta.momentum import RSIIndicator, StochasticOscillator, StochRSIIndicator, ROCIndicator, UltimateOscillator
 from ta.trend import MACD, ADXIndicator, CCIIndicator
 from ta.volatility import AverageTrueRange
@@ -18,11 +19,19 @@ with st.sidebar:
     period = st.selectbox("Select Period", ["1d", "5d", "7d"], index=1)
     run_bt = st.button("🚀 Run Backtest")
 
+
+
 # --- Fetch data ---
 @st.cache_data
 def fetch_data(ticker, interval, period):
     df = yf.download(ticker, interval=interval, period=period, progress=False)
-    return df.dropna()
+    df = df.dropna()
+    
+    # Convert index (timestamps) to IST
+    df.index = df.index.tz_localize('UTC').tz_convert('Asia/Kolkata')
+    
+    return df
+
 
 # --- Convert to 1D Series if needed ---
 def to_series(x):
