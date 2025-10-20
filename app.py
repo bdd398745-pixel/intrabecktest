@@ -28,9 +28,15 @@ def fetch_data(ticker, interval, period):
     df = df.dropna()
     
     # Convert index (timestamps) to IST
-    df.index = df.index.tz_localize('UTC').tz_convert('Asia/Kolkata')
+    if df.index.tz is None:
+        # if index is naive, localize to UTC first
+        df.index = df.index.tz_localize('UTC').tz_convert('Asia/Kolkata')
+    else:
+        # if already tz-aware, just convert to IST
+        df.index = df.index.tz_convert('Asia/Kolkata')
     
     return df
+
 
 
 # --- Convert to 1D Series if needed ---
