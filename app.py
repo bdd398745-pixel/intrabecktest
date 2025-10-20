@@ -18,15 +18,16 @@ with st.sidebar:
     period = st.selectbox("Select Period", ["1d", "5d", "7d"], index=1)
     run_bt = st.button("🚀 Run Backtest")
 
-# --- Function to fetch data ---
+# --- Fetch data ---
 @st.cache_data
 def fetch_data(ticker, interval, period):
     df = yf.download(ticker, interval=interval, period=period, progress=False)
     return df.dropna()
 
-# --- Indicator and signal logic ---
+# --- Prepare data and indicators ---
 def prepare_data(df):
-    close, high, low = df['Close'], df['High'], df['Low']
+    close, high, low = df['Close'].squeeze(), df['High'].squeeze(), df['Low'].squeeze()
+    
     df['RSI'] = RSIIndicator(close, window=9).rsi()
     df['Stoch'] = StochasticOscillator(high, low, close).stoch()
     df['StochRSI'] = StochRSIIndicator(close).stochrsi()
@@ -101,7 +102,7 @@ def backtest(df):
                     position = None
     return pd.DataFrame(trades)
 
-# --- Main Logic ---
+# --- Main ---
 if run_bt:
     df = fetch_data(ticker, interval, period)
     df = prepare_data(df)
