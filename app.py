@@ -69,8 +69,8 @@ def backtest(df):
     trades = []
     position = None
     for i in range(1, len(df)):
-        price = df['Close'].iloc[i]
-        atr = df['ATR'].iloc[i]
+        price = float(df['Close'].iloc[i])  # convert to float
+        atr = float(df['ATR'].iloc[i])      # convert to float
 
         if position is None:
             if df['Signal'].iloc[i-1] == "BUY" and df['Signal'].iloc[i] == "BUY":
@@ -86,24 +86,25 @@ def backtest(df):
         else:
             # Exit condition
             if position["type"] == "BUY":
-                if price <= position["sl"]:
-                    pnl = position["sl"] - position["entry"]
+                if price <= float(position["sl"]):  # ensure scalar
+                    pnl = float(position["sl"]) - float(position["entry"])
                     trades.append({"Exit": "Stoploss", "PnL": pnl, "Type": "BUY", "EntryTime": position["entry_time"], "ExitTime": df.index[i]})
                     position = None
-                elif price >= position["target"]:
-                    pnl = position["target"] - position["entry"]
+                elif price >= float(position["target"]):
+                    pnl = float(position["target"]) - float(position["entry"])
                     trades.append({"Exit": "Target", "PnL": pnl, "Type": "BUY", "EntryTime": position["entry_time"], "ExitTime": df.index[i]})
                     position = None
             elif position["type"] == "SELL":
-                if price >= position["sl"]:
-                    pnl = position["entry"] - position["sl"]
+                if price >= float(position["sl"]):
+                    pnl = float(position["entry"]) - float(position["sl"])
                     trades.append({"Exit": "Stoploss", "PnL": pnl, "Type": "SELL", "EntryTime": position["entry_time"], "ExitTime": df.index[i]})
                     position = None
-                elif price <= position["target"]:
-                    pnl = position["entry"] - position["target"]
+                elif price <= float(position["target"]):
+                    pnl = float(position["entry"]) - float(position["target"])
                     trades.append({"Exit": "Target", "PnL": pnl, "Type": "SELL", "EntryTime": position["entry_time"], "ExitTime": df.index[i]})
                     position = None
     return pd.DataFrame(trades)
+
 
 # --- Main ---
 if run_bt:
