@@ -34,31 +34,31 @@ def to_series(x):
 def prepare_data(df):
     close, high, low = df['Close'].squeeze(), df['High'].squeeze(), df['Low'].squeeze()
 
-    df['RSI'] = to_series(RSIIndicator(close, window=9).rsi())
-    df['Stoch'] = to_series(StochasticOscillator(high, low, close).stoch())
-    df['StochRSI'] = to_series(StochRSIIndicator(close).stochrsi())
-    df['MACD'] = to_series(MACD(close).macd_diff())
-    df['ADX'] = to_series(ADXIndicator(high, low, close).adx())
-    df['CCI'] = to_series(CCIIndicator(high, low, close).cci())
-    df['UltimateOsc'] = to_series(UltimateOscillator(high, low, close).ultimate_oscillator())
-    df['ROC'] = to_series(ROCIndicator(close).roc())
-    df['ATR'] = to_series(AverageTrueRange(high, low, close).average_true_range())
-    
-    df['EMA13'] = close.ewm(span=13, adjust=False).mean()
-    df['BullBear'] = high - df['EMA13']
+    # --- Indicators converted to numeric ---
+    df['RSI'] = pd.to_numeric(to_series(RSIIndicator(close, window=9).rsi()), errors='coerce')
+    df['Stoch'] = pd.to_numeric(to_series(StochasticOscillator(high, low, close).stoch()), errors='coerce')
+    df['StochRSI'] = pd.to_numeric(to_series(StochRSIIndicator(close).stochrsi()), errors='coerce')
+    df['MACD'] = pd.to_numeric(to_series(MACD(close).macd_diff()), errors='coerce')
+    df['ADX'] = pd.to_numeric(to_series(ADXIndicator(high, low, close).adx()), errors='coerce')
+    df['CCI'] = pd.to_numeric(to_series(CCIIndicator(high, low, close).cci()), errors='coerce')
+    df['UltimateOsc'] = pd.to_numeric(to_series(UltimateOscillator(high, low, close).ultimate_oscillator()), errors='coerce')
+    df['ROC'] = pd.to_numeric(to_series(ROCIndicator(close).roc()), errors='coerce')
+    df['ATR'] = pd.to_numeric(to_series(AverageTrueRange(high, low, close).average_true_range()), errors='coerce')
+    df['EMA13'] = pd.to_numeric(close.ewm(span=13, adjust=False).mean(), errors='coerce')
+    df['BullBear'] = pd.to_numeric(high - df['EMA13'], errors='coerce')
 
     # --- Combined Signal Logic ---
     def get_signal(row):
         score = 0
-        score += 1 if row['RSI'] < 30 else -1 if row['RSI'] > 70 else 0
-        score += 1 if row['Stoch'] < 20 else -1 if row['Stoch'] > 80 else 0
-        score += 1 if row['StochRSI'] < 0.2 else -1 if row['StochRSI'] > 0.8 else 0
-        score += 1 if row['MACD'] > 0 else -1 if row['MACD'] < 0 else 0
-        score += 1 if row['ADX'] > 25 else 0
-        score += 1 if row['CCI'] < -100 else -1 if row['CCI'] > 100 else 0
-        score += 1 if row['UltimateOsc'] < 30 else -1 if row['UltimateOsc'] > 70 else 0
-        score += 1 if row['ROC'] > 0 else -1 if row['ROC'] < 0 else 0
-        score += 1 if row['BullBear'] > 0 else -1 if row['BullBear'] < 0 else 0
+        score += 1 if float(row['RSI']) < 30 else -1 if float(row['RSI']) > 70 else 0
+        score += 1 if float(row['Stoch']) < 20 else -1 if float(row['Stoch']) > 80 else 0
+        score += 1 if float(row['StochRSI']) < 0.2 else -1 if float(row['StochRSI']) > 0.8 else 0
+        score += 1 if float(row['MACD']) > 0 else -1 if float(row['MACD']) < 0 else 0
+        score += 1 if float(row['ADX']) > 25 else 0
+        score += 1 if float(row['CCI']) < -100 else -1 if float(row['CCI']) > 100 else 0
+        score += 1 if float(row['UltimateOsc']) < 30 else -1 if float(row['UltimateOsc']) > 70 else 0
+        score += 1 if float(row['ROC']) > 0 else -1 if float(row['ROC']) < 0 else 0
+        score += 1 if float(row['BullBear']) > 0 else -1 if float(row['BullBear']) < 0 else 0
         return "BUY" if score > 0 else "SELL" if score < 0 else "NEUTRAL"
 
     df['Signal'] = df.apply(get_signal, axis=1)
