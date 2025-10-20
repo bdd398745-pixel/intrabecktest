@@ -24,22 +24,30 @@ def fetch_data(ticker, interval, period):
     df = yf.download(ticker, interval=interval, period=period, progress=False)
     return df.dropna()
 
+# --- Convert to 1D Series if needed ---
+def to_series(x):
+    if isinstance(x, pd.DataFrame):
+        return x.squeeze()
+    return x
+
 # --- Prepare data and indicators ---
 def prepare_data(df):
     close, high, low = df['Close'].squeeze(), df['High'].squeeze(), df['Low'].squeeze()
+
+    df['RSI'] = to_series(RSIIndicator(close, window=9).rsi())
+    df['Stoch'] = to_series(StochasticOscillator(high, low, close).stoch())
+    df['StochRSI'] = to_series(StochRSIIndicator(close).stochrsi())
+    df['MACD'] = to_series(MACD(close).macd_diff())
+    df['ADX'] = to_series(ADXIndicator(high, low, close).adx())
+    df['CCI'] = to_series(CCIIndicator(high, low, close).cci())
+    df['UltimateOsc'] = to_series(UltimateOscillator(high, low, close).ultimate_oscillator())
+    df['ROC'] = to_series(ROCIndicator(close).roc())
+    df['ATR'] = to_series(AverageTrueRange(high, low, close).average_true_range())
     
-    df['RSI'] = RSIIndicator(close, window=9).rsi()
-    df['Stoch'] = StochasticOscillator(high, low, close).stoch()
-    df['StochRSI'] = StochRSIIndicator(close).stochrsi()
-    df['MACD'] = MACD(close).macd_diff()
-    df['ADX'] = ADXIndicator(high, low, close).adx()
-    df['CCI'] = CCIIndicator(high, low, close).cci()
-    df['UltimateOsc'] = UltimateOscillator(high, low, close).ultimate_oscillator()
-    df['ROC'] = ROCIndicator(close).roc()
-    df['ATR'] = AverageTrueRange(high, low, close).average_true_range()
     df['EMA13'] = close.ewm(span=13, adjust=False).mean()
     df['BullBear'] = high - df['EMA13']
 
+    # --- Combined Signal Logic ---
     def get_signal(row):
         score = 0
         score += 1 if row['RSI'] < 30 else -1 if row['RSI'] > 70 else 0
@@ -51,12 +59,7 @@ def prepare_data(df):
         score += 1 if row['UltimateOsc'] < 30 else -1 if row['UltimateOsc'] > 70 else 0
         score += 1 if row['ROC'] > 0 else -1 if row['ROC'] < 0 else 0
         score += 1 if row['BullBear'] > 0 else -1 if row['BullBear'] < 0 else 0
-        if score > 0:
-            return "BUY"
-        elif score < 0:
-            return "SELL"
-        else:
-            return "NEUTRAL"
+        return "BUY" if score > 0 else "SELL" if score < 0 else "NEUTRAL"
 
     df['Signal'] = df.apply(get_signal, axis=1)
     return df
